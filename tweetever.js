@@ -12,29 +12,6 @@ Array.prototype.indexOfItem = function(comparer) {
     return -1;
 }
 
-Array.prototype.update = function(newArray, key) {
-    var result = [];
-    
-    for (var i = 0; i < this.length; i++) {
-        result[i] = this[i];
-    };
-
-    for (var i = newArray.length - 1; i >= 0; i--) {
-        var newItem = newArray[i];
-        var newItemKey = key(newItem);
-        var oldItemIndex = this.indexOfItem(function(item) { return key(item) === newItemKey; });
-
-        if (oldItemIndex !== -1) {
-            result[oldItemIndex] = newItem;
-        }
-        else {
-            result.unshift(newItem);
-        }
-    };
-
-    return result;
-}
-
 function getData(baseUrl, queryParams, callback) {
     var requestUrl = url.parse(baseUrl + '?' + queryString.stringify(queryParams));
     var client = http.createClient(requestUrl.port || 80, requestUrl.hostname);
@@ -117,13 +94,35 @@ function getFavorites(username, callback) {
     return getItems(baseUrl, queryParams, callback);
 }
 
-function saveItems(items, dir, filename, callback) {
+function updateItems(oldItems, newItems, key) {
+    for (var i = newItems.length - 1; i >= 0; i--) {
+        var newItem = newItems[i];
+        var newItemKey = key(newItem);
+        var oldItemIndex = oldItems.indexOfItem(function(item) { return key(item) === newItemKey; });
+
+        if (oldItemIndex !== -1) {
+            oldItems[oldItemIndex] = newItem;
+        }
+        else {
+            oldItems.unshift(newItem);
+        }
+    };
+}
+
+function saveItems(newItems, dir, filename, callback) {
     var fullFileName = path.join(dir, filename);
 
     fs.readFile(fullFileName, function(error, data) {
-        var oldItems = !error ? JSON.parse(data) : [];
-        var newItems = oldItems.update(items, function(item) { return item.id; });
-        fs.writeFile(fullFileName, JSON.stringify(newItems, null, 2), callback);       
+        var oldItems = data ? JSON.parse(data) : [];
+
+        if (oldItems.length === 0) {
+            oldItems = newItems;
+        }
+        else {
+            updateItems(oldItems, newItems, function(item) { return item.id; });
+        }
+
+        fs.writeFile(fullFileName, JSON.stringify(oldItems, null, 2), callback);       
     });
 }
 
