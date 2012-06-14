@@ -5,7 +5,7 @@ Keep your tweets and favorites forever with this little Node.js app.
 Requirements
 ----------
 
-[Node.js](https://nodejs.org)
+[Node.js](http://nodejs.org)
 
 Version History
 -------
